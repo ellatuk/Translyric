@@ -1,0 +1,26 @@
+{
+    "name": "Translyric",
+    "image": "image.png",
+    "banner": "banner.png",
+    "libraryLogo": "",
+    "author": "ellatuk",
+    "description": "Синхронный перевод текста песен рядом с основным текстом (Google Translate, бесплатный клиент gtx). На основе скрипта Lyrics Translation от maks1mio.",
+    "version": "1.0.0",
+    "css": "style.css",
+    "script": "script.js",
+    "type": "script",
+    "tags": [
+        "Lyrics",
+        "Translation",
+        "Utility"
+    ],
+    "dependencies": [],
+    "allowedUrls": [
+        "https://translate.googleapis.com"
+    ],
+    "supportedVersions": [],
+    "id": "d3bccb36-68ad-47bb-bcdd-fcafd3cd0324",
+    "installSource": "local",
+    "fromPext": true,
+    "packageHash": "44471935ba0b7c0c90951c41baf5235c3d42827f5436cbda7fc08946d305225d"
+}

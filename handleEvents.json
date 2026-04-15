@@ -1,0 +1,35 @@
+{
+    "sections": [
+        {
+            "title": "Перевод",
+            "items": [
+                {
+                    "id": "sel_lang",
+                    "name": "Язык перевода",
+                    "description": "Выбери, на какой язык переводить текст",
+                    "type": "selector",
+                    "defaultValue": 0,
+                    "options": [
+                        { "event": "ru", "name": "Русский" },
+                        { "event": "en", "name": "English" },
+                        { "event": "uk", "name": "Украинский" },
+                        { "event": "be", "name": "Белорусский" },
+                        { "event": "kk", "name": "Казахский" },
+                        { "event": "de", "name": "Deutsch" },
+                        { "event": "fr", "name": "Français" },
+                        { "event": "es", "name": "Español" },
+                        { "event": "it", "name": "Italiano" },
+                        { "event": "pt", "name": "Português" },
+                        { "event": "pl", "name": "Polski" },
+                        { "event": "tr", "name": "Türkçe" },
+                        { "event": "ar", "name": "العربية" },
+                        { "event": "ja", "name": "日本語" },
+                        { "event": "ko", "name": "한국어" },
+                        { "event": "zh-CN", "name": "简体中文" },
+                        { "event": "zh-TW", "name": "繁體中文" }
+                    ]
+                }
+            ]
+        }
+    ]
+}
