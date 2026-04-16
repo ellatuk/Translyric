@@ -81,3 +81,4 @@
 
 * [Сайт PulseSync](https://pulsesync.dev/)
 * [Репозиторий аддона](https://github.com/ellatuk/Translyric)
+* [Lyrics Translation](https://github.com/Maks1mio/Lyrics-Translation) от **maks1mio**
