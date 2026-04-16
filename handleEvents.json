@@ -2,32 +2,147 @@
     "sections": [
         {
             "title": "Перевод",
+            "displayTitle": {
+                "ru": "Перевод",
+                "en": "Translation"
+            },
             "items": [
+                {
+                    "id": "toggle_enable",
+                    "name": "Включить перевод",
+                    "displayName": {
+                        "ru": "Включить перевод",
+                        "en": "Enable translation"
+                    },
+                    "description": "Показывать перевод под текстом",
+                    "displayDescription": {
+                        "ru": "Показывать перевод под текстом",
+                        "en": "Show translation under lyrics"
+                    },
+                    "type": "button",
+                    "bool": true,
+                    "defaultValue": true
+                },
                 {
                     "id": "sel_lang",
                     "name": "Язык перевода",
-                    "description": "Выбери, на какой язык переводить текст",
+                    "displayName": {
+                        "ru": "Язык перевода",
+                        "en": "Translation language"
+                    },
+                    "description": "Выбери, на какой язык переводить",
+                    "displayDescription": {
+                        "ru": "Выбери, на какой язык переводить",
+                        "en": "Select target language"
+                    },
                     "type": "selector",
-                    "defaultValue": 0,
+                    "defaultValue": "ru",
                     "options": [
-                        { "event": "ru", "name": "Русский" },
-                        { "event": "en", "name": "English" },
-                        { "event": "uk", "name": "Украинский" },
-                        { "event": "be", "name": "Белорусский" },
-                        { "event": "kk", "name": "Казахский" },
-                        { "event": "de", "name": "Deutsch" },
-                        { "event": "fr", "name": "Français" },
-                        { "event": "es", "name": "Español" },
-                        { "event": "it", "name": "Italiano" },
-                        { "event": "pt", "name": "Português" },
-                        { "event": "pl", "name": "Polski" },
-                        { "event": "tr", "name": "Türkçe" },
-                        { "event": "ar", "name": "العربية" },
-                        { "event": "ja", "name": "日本語" },
-                        { "event": "ko", "name": "한국어" },
-                        { "event": "zh-CN", "name": "简体中文" },
-                        { "event": "zh-TW", "name": "繁體中文" }
+                        { "value": "ru", "name": "Русский" },
+                        { "value": "en", "name": "English" },
+                        { "value": "uk", "name": "Украинский" },
+                        { "value": "be", "name": "Белорусский" },
+                        { "value": "kk", "name": "Казахский" },
+                        { "value": "de", "name": "Deutsch" },
+                        { "value": "fr", "name": "Français" },
+                        { "value": "es", "name": "Español" },
+                        { "value": "it", "name": "Italiano" },
+                        { "value": "pt", "name": "Português" },
+                        { "value": "pl", "name": "Polski" },
+                        { "value": "tr", "name": "Türkçe" },
+                        { "value": "ar", "name": "العربية" },
+                        { "value": "ja", "name": "日本語" },
+                        { "value": "ko", "name": "한국어" },
+                        { "value": "zh-CN", "name": "简体中文" },
+                        { "value": "zh-TW", "name": "繁體中文" }
                     ]
+                },
+                {
+                    "id": "slider_font_size",
+                    "name": "Размер текста",
+                    "displayName": {
+                        "ru": "Размер текста",
+                        "en": "Font size"
+                    },
+                    "description": "От 8 до 32 пикселей",
+                    "displayDescription": {
+                        "ru": "От 8 до 32 пикселей",
+                        "en": "From 8 to 32 pixels"
+                    },
+                    "type": "slider",
+                    "min": 8,
+                    "max": 32,
+                    "step": 1,
+                    "defaultValue": 14
+                },
+                {
+                    "id": "color_text",
+                    "name": "Цвет текста",
+                    "displayName": {
+                        "ru": "Цвет текста",
+                        "en": "Text color"
+                    },
+                    "description": "Выбери цвет текста перевода",
+                    "displayDescription": {
+                        "ru": "Выбери цвет текста перевода",
+                        "en": "Choose translation text color"
+                    },
+                    "type": "color",
+                    "defaultValue": "#ffffffcc"
+                },
+                {
+                    "id": "sel_font",
+                    "name": "Шрифт",
+                    "displayName": {
+                        "ru": "Шрифт",
+                        "en": "Font"
+                    },
+                    "description": "Выбрать шрифт текста перевода",
+                    "displayDescription": {
+                        "ru": "Выбрать шрифт текста перевода",
+                        "en": "Select translation font"
+                    },
+                    "type": "selector",
+                    "defaultValue": "inherit",
+                    "options": [
+                        { "value": "inherit", "name": "По умолчанию" },
+                        { "value": "Arial, sans-serif", "name": "Arial" },
+                        { "value": "Verdana, sans-serif", "name": "Verdana" },
+                        { "value": "'Segoe UI', sans-serif", "name": "Segoe UI" },
+                        { "value": "custom", "name": "Свой шрифт" }
+                    ]
+                },
+                {
+                    "id": "input_custom_font",
+                    "name": "Свой шрифт",
+                    "displayName": {
+                        "ru": "Свой шрифт",
+                        "en": "Custom font"
+                    },
+                    "description": "Укажите название системного шрифта или цепочку через запятую, например: 'Segoe UI', Roboto, Arial, sans-serif. Названия с пробелами заключайте в кавычки.",
+                    "displayDescription": {
+                        "ru": "Укажите название системного шрифта или цепочку через запятую, например: 'Segoe UI', Roboto, Arial, sans-serif. Названия с пробелами заключайте в кавычки.",
+                        "en": "Enter a system font name or a font stack, e.g. 'Segoe UI', Roboto, Arial, sans-serif. Put names with spaces in quotes."
+                    },
+                    "type": "input",
+                    "placeholder": "Roboto, 'Times New Roman', sans-serif",
+                    "defaultValue": ""
+                },
+                {
+                    "id": "toggle_icon",
+                    "name": "Показывать иконку",
+                    "displayName": {
+                        "ru": "Показывать иконку",
+                        "en": "Show icon"
+                    },
+                    "description": "Отображать иконку перевода",
+                    "displayDescription": {
+                        "ru": "Отображать иконку перевода",
+                        "en": "Show translation icon"
+                    },
+                    "type": "button",
+                    "bool": true,
+                    "defaultValue": true
                 }
             ]
         }

@@ -2,15 +2,42 @@
     'use strict'
 
     const LOG = '[Translyric]'
-    const SETTINGS_NAME = 'Translyric'
-    const DEFAULT_TARGET_LANG = 'ru'
-    let targetLang = DEFAULT_TARGET_LANG
+    const ADDON_NAME = 'Translyric'
+    
+    // ---------- Настройки ----------
+    let targetLang = 'ru'
+    let translationEnabled = true
+    let fontSize = 14
+    let textColor = '#ffffffcc'
+    let fontFamily = 'inherit'
+    let showIcon = true
 
     const MAX_BATCH_CHARS = 4000
     const DEBOUNCE_MS = 200
     const CHUNK_GAP_MS = 80
 
-    // Кеш для переводов
+    // Список языков для горячих клавиш
+    const LANG_LIST = [
+        { code: 'ru', name: 'Русский' },
+        { code: 'en', name: 'English' },
+        { code: 'uk', name: 'Украинский' },
+        { code: 'be', name: 'Белорусский' },
+        { code: 'kk', name: 'Казахский' },
+        { code: 'de', name: 'Deutsch' },
+        { code: 'fr', name: 'Français' },
+        { code: 'es', name: 'Español' },
+        { code: 'it', name: 'Italiano' },
+        { code: 'pt', name: 'Português' },
+        { code: 'pl', name: 'Polski' },
+        { code: 'tr', name: 'Türkçe' },
+        { code: 'ar', name: 'العربية' },
+        { code: 'ja', name: '日本語' },
+        { code: 'ko', name: '한국어' },
+        { code: 'zh-CN', name: '简体中文' },
+        { code: 'zh-TW', name: '繁體中文' }
+    ]
+    let currentLangIndex = 0
+
     const translationCache = new Map()
     try {
         for (let i = 0; i < localStorage.length; i++) {
@@ -55,7 +82,7 @@
 
     function normalizeTargetLang(raw) {
         const value = String(raw || '').trim().toLowerCase().replace(/_/g, '-')
-        if (!value) return DEFAULT_TARGET_LANG
+        if (!value) return targetLang
         return LANGUAGE_ALIAS_TO_CODE[value] || value
     }
 
@@ -248,8 +275,8 @@
         return { parts: result, sourceLang: overallSourceLang }
     }
 
-    // Иконка Lucide "Languages"
     const TRANSLATE_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg>`
+    const ERROR_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><circle cx="12" cy="16" r="0.5" fill="currentColor" stroke="none"/></svg>`
 
     function getOriginalSpan(lineEl) {
         return lineEl.querySelector(':scope > span:not(.ps-lyrics-tr)')
@@ -274,7 +301,27 @@
             slot.appendChild(iconWrap)
             slot.appendChild(textEl)
         }
+        applyDynamicStyles(slot)
         return slot
+    }
+
+    function applyDynamicStyles(slot) {
+        if (!slot) return
+        const textEl = slot.querySelector('.ps-lyrics-tr_text')
+        const iconEl = slot.querySelector('.ps-lyrics-tr_icon')
+        if (textEl) {
+            textEl.style.fontSize = fontSize + 'px'
+            textEl.style.color = textColor
+            textEl.style.fontFamily = fontFamily
+        }
+        if (iconEl) {
+            iconEl.style.display = showIcon ? 'inline-flex' : 'none'
+        }
+        slot.style.display = translationEnabled ? 'flex' : 'none'
+    }
+
+    function updateAllSlotsStyles() {
+        document.querySelectorAll('.ps-lyrics-tr').forEach(slot => applyDynamicStyles(slot))
     }
 
     function getTrTextEl(slot) {
@@ -313,6 +360,13 @@
         const sig = makeSignature(texts)
 
         if (!lineEls.length) {
+            lastAppliedSignature = ''
+            pendingSignature = ''
+            return
+        }
+
+        if (!translationEnabled) {
+            lineEls.forEach(clearLineState)
             lastAppliedSignature = ''
             pendingSignature = ''
             return
@@ -383,6 +437,7 @@
                 slot.classList.remove('ps-lyrics-tr_loading')
                 const textEl = getTrTextEl(slot)
                 if (textEl) textEl.textContent = tr
+                applyDynamicStyles(slot)
             }
             lastAppliedSignature = sig
             pendingSignature = ''
@@ -394,82 +449,225 @@
                 const lineEl = lineEls[i]
                 if (!lineEl.isConnected || !texts[i]) continue
                 lineEl.removeAttribute('data-ps-loading')
-                lineEl.setAttribute('data-ps-tr', '—')
                 const slot = ensureTrSlot(lineEl)
                 slot.classList.remove('ps-lyrics-tr_loading')
+                const iconEl = slot.querySelector('.ps-lyrics-tr_icon')
+                if (iconEl) {
+                    iconEl.innerHTML = ERROR_ICON_SVG
+                    iconEl.style.display = showIcon ? 'inline-flex' : 'none'
+                }
                 const textEl = getTrTextEl(slot)
-                if (textEl) textEl.textContent = '—'
+                if (textEl) textEl.textContent = 'Ошибка'
+                applyDynamicStyles(slot)
             }
         })
     }
 
-    // ------------------ Настройки ------------------
-    async function fetchSettingsFile() {
+    // ------------------ PULSESYNC API ------------------
+    let handleData = null; // сохраним описание всех опций
+
+    function unwrapSetting(entry, fallback) {
+        if (Array.isArray(entry)) {
+            entry = entry.length > 0 ? entry[0] : fallback;
+        }
+        if (entry && typeof entry === 'object') {
+            if (typeof entry.value !== 'undefined') return entry.value;
+            if (typeof entry.default !== 'undefined') return entry.default;
+        }
+        return typeof entry !== 'undefined' ? entry : fallback;
+    }
+
+    async function initializeSettings() {
         try {
-            const res = await fetch('http://localhost:2007/get_handle?name=' + encodeURIComponent(SETTINGS_NAME))
-            if (!res.ok) return null
-            const json = await res.json()
-            return json && json.data ? json.data : null
+            let attempts = 0
+            while (!window.pulsesyncApi && attempts < 50) {
+                await new Promise(r => setTimeout(r, 100))
+                attempts++
+            }
+            if (!window.pulsesyncApi) {
+                console.warn(LOG, 'pulsesyncApi not available')
+                return
+            }
+
+            // Получаем handleData
+            const handleRes = await fetch(`http://localhost:2007/get_handle?name=${encodeURIComponent(ADDON_NAME)}`, { cache: 'no-cache' });
+            if (handleRes.ok) {
+                const json = await handleRes.json();
+                handleData = json.data;
+            } else {
+                console.warn(LOG, 'Could not fetch handleData, selectors may not work properly');
+            }
+
+            const settings = await window.pulsesyncApi.getSettings(ADDON_NAME)
+            const currentSettings = settings.getCurrent()
+            applySettingsFromObject(currentSettings)
+
+            settings.onChange((newSettings) => {
+                console.log(LOG, 'Settings changed via API', newSettings)
+                applySettingsFromObject(newSettings)
+            })
+
+            if (window.pulsesyncApi.hotkeys) {
+                window.pulsesyncApi.hotkeys.onPress('toggle_translation', () => {
+                    const newValue = !translationEnabled
+                    settings.set({ toggle_enable: newValue })
+                    if (window.pulsesyncApi.notifications) {
+                        window.pulsesyncApi.notifications.show({
+                            title: 'Translyric',
+                            message: newValue ? 'Перевод включён' : 'Перевод выключен',
+                            type: 'info',
+                            timeout: 1500
+                        })
+                    }
+                })
+
+                window.pulsesyncApi.hotkeys.onPress('next_language', () => {
+                    currentLangIndex = (currentLangIndex + 1) % LANG_LIST.length
+                    const newLang = LANG_LIST[currentLangIndex]
+                    settings.set({ sel_lang: newLang.code })
+                    if (window.pulsesyncApi.notifications) {
+                        window.pulsesyncApi.notifications.show({
+                            title: 'Translyric',
+                            message: `Язык перевода: ${newLang.name}`,
+                            type: 'info',
+                            timeout: 1500
+                        })
+                    }
+                })
+
+                window.pulsesyncApi.hotkeys.onPress('clear_cache', () => {
+                    resetTranslationState()
+                    if (window.pulsesyncApi.notifications) {
+                        window.pulsesyncApi.notifications.show({
+                            title: 'Translyric',
+                            message: 'Кэш переводов очищен',
+                            type: 'info',
+                            timeout: 2000
+                        })
+                    }
+                    processAllLines()
+                })
+            }
+
+            console.log(LOG, 'Settings and hotkeys initialized')
         } catch (e) {
-            console.warn(LOG, 'failed to fetch settings', e)
-            return null
+            console.warn(LOG, 'Error initializing settings', e)
         }
     }
 
-    async function fetchSelectedValues() {
-        try {
-            const res = await fetch('pulsesync.settings.json')
-            if (!res.ok) return null
-            return await res.json()
-        } catch (e) {
-            return null
-        }
-    }
-
-    async function loadLanguageSetting() {
-        try {
-            const [handleData, selectedValues] = await Promise.all([fetchSettingsFile(), fetchSelectedValues()])
-            if (!handleData || !handleData.sections) return
-
-            for (const section of handleData.sections) {
-                if (!section.items) continue
-                for (const item of section.items) {
-                    if (item.type !== 'selector') continue
-                    const itemId = item.id
-                    const rawValue = selectedValues && selectedValues[itemId] !== undefined
-                        ? selectedValues[itemId]
-                        : item.defaultValue
-                    const idx = Number(rawValue) || 0
-                    const options = item.options
-                    if (Array.isArray(options) && options[idx]) {
-                        const ev = options[idx].event
-                        if (ev) {
-                            const newLang = normalizeTargetLang(ev)
-                            if (newLang !== targetLang) {
-                                targetLang = newLang
-                                resetTranslationState()
-                                processAllLines()
-                                console.log(LOG, 'Language changed to:', targetLang)
-                            }
-                        }
+    function getSelectorValue(itemId, rawValue, fallback) {
+        if (!handleData) return fallback;
+        // Ищем описание селектора
+        for (const section of handleData.sections) {
+            if (!section.items) continue;
+            for (const item of section.items) {
+                if (item.id === itemId && item.type === 'selector' && Array.isArray(item.options)) {
+                    const idx = Number(rawValue);
+                    if (!isNaN(idx) && idx >= 0 && idx < item.options.length) {
+                        const opt = item.options[idx];
+                        // приоритет: value, затем event (для sel_lang)
+                        return opt.value !== undefined ? opt.value : opt.event;
+                    }
+                    // если индекс невалидный, берём defaultValue
+                    const defaultIdx = item.defaultValue;
+                    if (defaultIdx !== undefined && item.options[defaultIdx]) {
+                        const opt = item.options[defaultIdx];
+                        return opt.value !== undefined ? opt.value : opt.event;
                     }
                 }
             }
-        } catch (e) {
-            console.warn(LOG, 'Error loading language setting', e)
+        }
+        return fallback;
+    }
+
+    function applySettingsFromObject(settings) {
+        let changed = false
+        let langChanged = false
+        let enabledChanged = false
+        let styleChanged = false
+
+        // Извлекаем значения с учётом селекторов
+        const rawLang = unwrapSetting(settings.sel_lang, targetLang);
+        // Если это число (индекс) - преобразуем через getSelectorValue
+        let newTargetLang = rawLang;
+        if (!isNaN(Number(rawLang))) {
+            newTargetLang = getSelectorValue('sel_lang', rawLang, targetLang);
+        } else {
+            newTargetLang = normalizeTargetLang(rawLang);
+        }
+
+        const newTranslationEnabled = unwrapSetting(settings.toggle_enable, translationEnabled)
+        const newFontSize = unwrapSetting(settings.slider_font_size, fontSize)
+        const newTextColor = unwrapSetting(settings.color_text, textColor)
+        
+        const rawFont = unwrapSetting(settings.sel_font, fontFamily);
+        let newFontFamily = rawFont;
+        if (!isNaN(Number(rawFont))) {
+            newFontFamily = getSelectorValue('sel_font', rawFont, fontFamily);
+        }
+        
+        const customFont = unwrapSetting(settings.input_custom_font, '')
+        const newShowIcon = unwrapSetting(settings.toggle_icon, showIcon)
+
+        // Если выбран "Свой шрифт", используем значение из поля ввода
+        if (newFontFamily === 'custom' && customFont.trim() !== '') {
+            newFontFamily = customFont.trim();
+        } else if (newFontFamily === 'custom') {
+            newFontFamily = 'inherit';
+        }
+
+        const foundIndex = LANG_LIST.findIndex(l => l.code === newTargetLang)
+        if (foundIndex !== -1) currentLangIndex = foundIndex
+
+        if (newTargetLang !== targetLang) {
+            targetLang = newTargetLang
+            langChanged = true
+            changed = true
+        }
+        if (newTranslationEnabled !== translationEnabled) {
+            translationEnabled = newTranslationEnabled
+            enabledChanged = true
+            changed = true
+        }
+        if (newFontSize !== fontSize) {
+            fontSize = newFontSize
+            styleChanged = true
+            changed = true
+        }
+        if (newTextColor !== textColor) {
+            textColor = newTextColor
+            styleChanged = true
+            changed = true
+        }
+        if (newFontFamily !== fontFamily) {
+            fontFamily = newFontFamily
+            styleChanged = true
+            changed = true
+        }
+        if (newShowIcon !== showIcon) {
+            showIcon = newShowIcon
+            styleChanged = true
+            changed = true
+        }
+
+        if (!changed) return
+
+        console.log(LOG, 'Applying new settings:', {
+            targetLang, translationEnabled, fontSize, textColor, fontFamily, showIcon
+        })
+
+        if (langChanged) resetTranslationState()
+        if (styleChanged) updateAllSlotsStyles()
+        if (langChanged || enabledChanged) {
+            lastAppliedSignature = ''
+            pendingSignature = ''
+            processAllLines()
         }
     }
 
-    async function pollSettings() {
-        await loadLanguageSetting()
-    }
-
-    // ------------------ Запуск ------------------
+    // ------------------ ЗАПУСК ------------------
     const observer = new MutationObserver(() => debounceProcess())
     observer.observe(document.body, { childList: true, subtree: true })
 
-    loadLanguageSetting().then(() => {
-        processAllLines()
-    })
-    setInterval(pollSettings, 2500)
+    initializeSettings().then(() => processAllLines())
 })()
