@@ -5,7 +5,7 @@
   "libraryLogo": "",
   "author": "ellatuk",
   "description": "Аддон для синхронного перевода текста песен в Яндекс Музыке. Удобный и настраиваемый!",
-  "version": "1.0.0",
+  "version": "1.0.5",
   "css": "style.css",
   "script": "script.js",
   "type": "script",
@@ -51,5 +51,6 @@
         "C"
       ]
     }
-  ]
+  ],
+  "storeAddonId": "b82284ad-2c8c-451a-a2c4-20e23fa45301"
 }

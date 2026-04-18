@@ -61,12 +61,14 @@
     width: 1.3em;
     height: 1.3em;
     opacity: 0.9;
+    color: inherit;
 }
 
 .ps-lyrics-tr_icon svg {
     display: block;
-    width: 1.3em;
-    height: 1.3em;
+    width: 100%;
+    height: 100%;
+    stroke: currentColor;
 }
 
 .ps-lyrics-tr_text {

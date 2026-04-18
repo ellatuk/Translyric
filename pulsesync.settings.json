@@ -1,0 +1,14 @@
+{
+    "toggle_enable": true,
+    "sel_lang": 0,
+    "slider_font_size": 18,
+    "color_text": "",
+    "sel_font": 0,
+    "input_custom_font": "",
+    "toggle_icon": true,
+    "sel_icon": 0,
+    "toggle_icon_color_sync": false,
+    "color_icon": "#FBFEFFFF",
+    "sel_error_icon": 1,
+    "btn_reset_settings": false
+}
